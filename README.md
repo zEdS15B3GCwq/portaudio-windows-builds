@@ -83,8 +83,8 @@ adds to each release contain only this repository's code.
 
 The ASIO SDK source is taken from [our fork](https://github.com/zEdS15B3GCwq/asio) of
 [audiosdk/asio](https://github.com/audiosdk/asio). When the fork was created (2026-11-21),
-both of these and the [zip on Steinberg's site](https://www.steinberg.net/asiosdk)
-contained the same source code.
+it was identical to that repository, and differed from the
+[zip on Steinberg's site](https://www.steinberg.net/asiosdk) only in line endings.
 
 ## Releases
 

@@ -11,8 +11,9 @@ ASIO_ISSUE = "https://github.com/PortAudio/portaudio/issues/696"
 SDK_ORIGINS = (
     "  - [audiosdk/asio](https://github.com/audiosdk/asio), which it was forked from",
     "  - [Steinberg's SDK zip](https://www.steinberg.net/asiosdk)",
-    "  - When the fork was created (2026-11-21, at commit 496a076), these two contained",
-    "    the same source code as the fork. They may have changed since.",
+    "  - When the fork was created (2026-11-21, at commit 496a076), it was identical to",
+    "    audiosdk/asio, and differed from the zip only in line endings. Both may have",
+    "    changed since.",
 )
 
 
