@@ -7,6 +7,14 @@ TRADEMARK = "ASIO is a trademark and software of Steinberg Media Technologies Gm
 
 ASIO_ISSUE = "https://github.com/PortAudio/portaudio/issues/696"
 
+# About the fork's origin, so it stays true when the pinned commit changes.
+SDK_ORIGINS = (
+    "  - [audiosdk/asio](https://github.com/audiosdk/asio), which it was forked from",
+    "  - [Steinberg's SDK zip](https://www.steinberg.net/asiosdk)",
+    "  - When the fork was created (2026-11-21, at commit 496a076), these two contained",
+    "    the same source code as the fork. They may have changed since.",
+)
+
 
 def asio_license(sdk) -> str:
     """The SDK's LICENSE.txt, plus the license that is embedded in its host/ sources.
@@ -28,6 +36,23 @@ def asio_license(sdk) -> str:
         "The SDK's host/ sources have the following license:\n\n"
         f"{embedded}\n"
     )
+
+
+def source_list(
+    sources: list[dict], sdk_repo: str, sdk_sha: str, repo: str, builder_sha: str
+) -> list[str]:
+    """Where to get the source of the binaries, as GPLv3 section 6(d) requires."""
+
+    def link(name: str, sha: str) -> str:
+        return f"[{name}@{short_sha(sha)}](https://github.com/{name}/tree/{sha})"
+
+    return [
+        *(f"- PortAudio {s['label']}: {link('PortAudio/portaudio', s['sha'])}" for s in sources),
+        f"- ASIO SDK (only in `-asio` DLLs): {link(sdk_repo, sdk_sha)}",
+        *SDK_ORIGINS,
+        f"- Build scripts: {link(repo, builder_sha)}, also attached to the release as",
+        '  "Source code" (zip and tar.gz), which contains only the code of this project',
+    ]
 
 
 def notice(
@@ -52,12 +77,10 @@ def notice(
         "",
         "## Sources",
         "",
-        f"Built on {date} from these commits. The `*-src.zip` files in the release contain them.",
+        f"Built on {date} from the source code at these locations:",
         "",
+        *source_list(sources, sdk_repo, sdk_sha, repo, builder_sha),
     ]
-    for source in sources:
-        lines.append(f"- PortAudio {source['label']}: PortAudio/portaudio@{source['sha']}")
-    lines += [f"- ASIO SDK: {sdk_repo}@{sdk_sha}", f"- Build scripts: {repo}@{builder_sha}"]
     if any(source["kind"] == "master" for source in sources):
         lines += [
             "",
@@ -106,11 +129,14 @@ def release_notes(
         "### Licenses",
         "",
         "- `-asio` DLLs: **GPLv3**, as they contain code of the Steinberg ASIO SDK",
-        f"  ([source](https://github.com/{sdk_repo}/tree/{sdk_sha}))",
         "- Other DLLs: PortAudio's MIT license",
         "",
-        "The license texts and sources are attached to this release.",
+        "The license texts are attached to this release.",
         f"See the [README]({readme}#licenses) for details.",
+        "",
+        "### Sources",
+        "",
+        *source_list(sources, sdk_repo, sdk_sha, repo, builder_sha),
         "",
         "### Verification",
         "",

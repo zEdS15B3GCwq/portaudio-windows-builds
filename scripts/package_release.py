@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
-"""Assemble everything that a release publishes: binaries, sources, licenses, checksums.
+"""Assemble what a release publishes: binaries, licenses, list of sources, checksums.
 
 The DLLs are separate files, and the licenses that apply to them are released next to them.
+Third-party sources are linked, not copied. GitHub adds the archive of this repository.
 Runs without write permissions. The release job only uploads what this produces.
 """
 
@@ -16,15 +17,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from common import (
-    ARCHES,
-    VARIANTS,
-    build_artifact_name,
-    dev_zip_name,
-    dll_name,
-    file_suffix,
-    short_sha,
-)
+from common import ARCHES, VARIANTS, build_artifact_name, dev_zip_name, dll_name, file_suffix
 from inspect_dll import check
 from notices import asio_license, notice, release_notes
 
@@ -40,8 +33,6 @@ PUBLIC_HEADERS = (
 
 # GPLv3 has to be passed on with the binaries. Ubuntu, which this runs on, ships the text.
 GPL_TEXT = Path("/usr/share/common-licenses/GPL-3")
-
-ROOT = Path(__file__).resolve().parent.parent
 
 
 class Repo:
@@ -69,12 +60,6 @@ class Repo:
 
     def text(self, path: str) -> str:
         return self.read(path).decode("utf-8", errors="replace").replace("\r\n", "\n")
-
-    def archive(self, prefix: str, output: Path) -> None:
-        self.git(
-            "archive", "--format=zip", f"--prefix={prefix}/",
-            f"--output={output.resolve()}", self.commit,
-        )
 
 
 def read_gpl(path: Path) -> bytes:
@@ -161,13 +146,6 @@ def main() -> None:
             all_builds += builds
             headers = {f"include/{h}": repo.read(f"include/{h}") for h in PUBLIC_HEADERS}
             write_zip(assets / dev_zip_name(label), {**libraries, **headers})
-            repo.archive(f"portaudio-{label}", assets / f"portaudio-{label}-src.zip")
-
-        # GPLv3 requires the source of the SDK and the scripts that run the build, too.
-        sdk_name = f"asiosdk-{short_sha(sdk_sha)}"
-        sdk.archive(sdk_name, assets / f"{sdk_name}-src.zip")
-        builder_name = f"build-scripts-{short_sha(builder_sha)}"
-        Repo(ROOT, builder_sha).archive(builder_name, assets / f"{builder_name}-src.zip")
 
     date = dt.datetime.now(dt.timezone.utc).date().isoformat()
     text = notice(sources, all_builds, sdk_repo, sdk_sha, repo_name, builder_sha, date)

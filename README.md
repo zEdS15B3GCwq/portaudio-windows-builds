@@ -77,8 +77,14 @@ For the `-asio` DLLs that is GPLv3, which can also affect the licensing of softw
 you distribute with them. If GPLv3 doesn't suit you, use a DLL without ASIO, or obtain a
 license from Steinberg and build your own. Refer to the documentation linked above.
 
-Each release includes the license texts and the sources of PortAudio, the ASIO SDK and
-the build scripts.
+Each release includes the license texts, and `NOTICE.md` links to the exact source code
+of PortAudio, the ASIO SDK and the build scripts. The "Source code" archives that GitHub
+adds to each release contain only this repository's code.
+
+The ASIO SDK source is taken from [our fork](https://github.com/zEdS15B3GCwq/asio) of
+[audiosdk/asio](https://github.com/audiosdk/asio). When the fork was created (2026-11-21),
+both of these and the [zip on Steinberg's site](https://www.steinberg.net/asiosdk)
+contained the same source code.
 
 ## Releases
 

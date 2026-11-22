@@ -209,7 +209,7 @@ jobs:
           pattern: build-*
           path: artifacts
 
-      - name: Assemble binaries, sources, licenses and checksums
+      - name: Assemble binaries, licenses, source list and checksums
         env:
           SOURCES: ${{ needs.resolve.outputs.sources }}
         run: python builder/scripts/package_release.py --artifacts artifacts --out release
