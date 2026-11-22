@@ -40,7 +40,12 @@ drivers are third-party code of varying quality, which has consequences:
   audio of other applications.
 - **Crashes**: a faulty driver can take down your application.
 
-See [PortAudio issue #696](https://github.com/PortAudio/portaudio/issues/696) for details.
+[python-sounddevice issue #496](https://github.com/spatialaudio/python-sounddevice/issues/496)
+describes the problems this caused in practice: with ASIO included in the bundled DLL,
+merely importing the package interrupted other audio and delayed startup, so ASIO is no
+longer enabled there by default. The underlying cause is discussed in
+[PortAudio issue #696](https://github.com/PortAudio/portaudio/issues/696).
+
 The DLLs without `-asio` don't have these problems, as they contain no ASIO code.
 
 ## Licenses
