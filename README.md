@@ -24,9 +24,14 @@ The DLLs are on the [Releases](../../releases) page, as individual files:
 
 The DLLs don't need the Visual C++ redistributable.
 
-To link at compile time, get the headers and import libraries from
-`portaudio-<version>-win-dev.zip`, and rename the DLL to the name of the library
-(e.g. `portaudio.lib` needs `portaudio.dll`).
+If you load the DLL at runtime (`LoadLibrary`, `ctypes` etc.), you can use it under any
+name. To link at compile time instead:
+
+1. Get `portaudio-<version>-win-dev.zip`, which has the headers and a folder for each
+   architecture and variant, e.g. `arm64-asio/portaudio.lib`.
+2. Link with the `portaudio.lib` that matches your DLL.
+3. **Ship the DLL renamed to `portaudio.dll`.** Programs linked with any of these libraries
+   look for that name, and don't start without it.
 
 ## Before you use a DLL with ASIO
 

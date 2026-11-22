@@ -107,8 +107,8 @@ def collect_builds(source: dict, artifacts: Path, assets: Path) -> tuple[list[di
             (assets / name).write_bytes((directory / name).read_bytes())
 
             dev = sorted((directory / "dev").iterdir())
-            if [file.suffix for file in dev] != [".lib"]:
-                sys.exit(f"expected only an import library in {directory / 'dev'}")
+            if [file.name for file in dev] != ["portaudio.lib"]:
+                sys.exit(f"expected only portaudio.lib in {directory / 'dev'}")
             libraries[f"{arch}{file_suffix(variant)}/{dev[0].name}"] = dev[0].read_bytes()
 
             builds.append(json.loads((directory / "build-info.json").read_text(encoding="utf-8")))
