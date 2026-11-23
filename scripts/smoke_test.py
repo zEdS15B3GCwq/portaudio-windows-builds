@@ -16,6 +16,7 @@ What's checked here, based on the initializers in v19.7.0 and master:
 import argparse
 import ctypes
 import sys
+import sysconfig
 from pathlib import Path
 
 from common import VARIANTS, short_sha
@@ -95,6 +96,7 @@ def main() -> None:
 
     # Flush, so that the log names the DLL even if loading it crashes the process.
     print(f"== {args.dll.name}", flush=True)
+    print(f"   python : {sys.version.split()[0]} {sysconfig.get_platform()}", flush=True)
     problems, warnings = check(load(args.dll), args.variant, args.sha)
     for warning in warnings:
         print(f"::warning::{args.dll.name}: {warning}")
