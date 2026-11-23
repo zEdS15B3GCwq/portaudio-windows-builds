@@ -3,10 +3,9 @@
 
 [project]
 name = "portaudio-windows-builds"
-version = "0"
+version = "0.1.0"
 description = "Builds and releases PortAudio DLLs for Windows"
 license = "MIT"
-# The exact versions are in uv.lock.
 requires-python = ">=3.15"
 dependencies = ["pefile>=2024.8.26"]
 

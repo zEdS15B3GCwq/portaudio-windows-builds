@@ -1,6 +1,6 @@
 version = 1
 revision = 5
-requires-python = ">=3.13"
+requires-python = ">=3.15"
 
 [[package]]
 name = "pefile"
@@ -13,11 +13,11 @@ wheels = [
 
 [[package]]
 name = "portaudio-windows-builds"
-version = "0"
+version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "pefile" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pefile", specifier = "==2024.8.26" }]
+requires-dist = [{ name = "pefile", specifier = ">=2024.8.26" }]
