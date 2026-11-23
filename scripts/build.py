@@ -37,9 +37,10 @@ def run(command: list[str], env: dict) -> str:
         encoding="utf-8",
         errors="replace",
     ) as process:
-        for line in process.stdout:
-            print(line, end="", flush=True)
-            lines.append(line)
+        if process.stdout is not None:
+            for line in process.stdout:
+                print(line, end="", flush=True)
+                lines.append(line)
     if process.returncode:
         sys.exit(f"command failed with exit code {process.returncode}")
     return "".join(lines)

@@ -39,10 +39,11 @@ def get_json(path: str):
 
 def get_all_pages(path: str) -> list:
     items, page = [], 1
+    PER_PAGE = 100
     while True:
-        batch = get_json(f"{path}?per_page=100&page={page}")
+        batch = get_json(f"{path}?per_page={PER_PAGE}&page={page}")
         items += batch
-        if len(batch) < 100:
+        if len(batch) < PER_PAGE:
             return items
         page += 1
 
@@ -63,7 +64,7 @@ def find_candidates() -> list[dict]:
     master = get_commit("master")
     # The commit date, not today's, so that a commit always gets the same label.
     committed = dt.datetime.fromisoformat(master["commit"]["committer"]["date"])
-    date = committed.astimezone(dt.timezone.utc).strftime("%Y%m%d")
+    date = committed.astimezone(dt.UTC).strftime("%Y%m%d")
 
     return [
         {"kind": "release", "label": tag, "sha": release_sha},
@@ -105,7 +106,7 @@ def main() -> None:
     else:
         sources = select_new(candidates, get_all_pages(f"/repos/{repo}/releases"))
 
-    today = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+    today = dt.datetime.now(dt.UTC).strftime("%Y-%m-%d")
     refs = get_json(f"/repos/{repo}/git/matching-refs/tags/{today}")
     tag = next_tag(today, {ref["ref"].removeprefix("refs/tags/") for ref in refs})
 

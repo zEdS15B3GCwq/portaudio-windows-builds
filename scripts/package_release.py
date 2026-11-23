@@ -31,7 +31,7 @@ class Repo:
         self.directory, self.commit = directory, commit
 
     @classmethod
-    def fetch(cls, url: str, commit: str, directory: Path) -> "Repo":
+    def fetch(cls, url: str, commit: str, directory: Path) -> Repo:
         subprocess.run(["git", "init", "--quiet", str(directory)], check=True)
         repo = cls(directory, commit)
         repo.git("fetch", "--quiet", "--depth=1", url, commit)
@@ -125,7 +125,7 @@ def main() -> None:
         for source in sources:
             all_builds += collect_builds(source, args.artifacts, assets)
 
-    date = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    date = dt.datetime.now(dt.UTC).date().isoformat()
     text = notice(sources, all_builds, sdk_repo, sdk_sha, repo_name, builder_sha, date)
     (assets / "NOTICE.md").write_bytes(text.encode())
 

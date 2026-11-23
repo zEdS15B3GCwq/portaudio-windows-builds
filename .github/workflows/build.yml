@@ -78,7 +78,7 @@ jobs:
       - name: Set up uv and Python
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          # python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
 
       - name: Compare PortAudio with our releases
@@ -129,7 +129,7 @@ jobs:
       - name: Set up uv and Python
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          # python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
 
       - name: Build
@@ -218,7 +218,7 @@ jobs:
       - name: Set up uv and Python
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          # python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
 
       - name: Download builds
