@@ -13,8 +13,9 @@
 # - Testing a change: push to a branch other than main.
 # - Releasing now: run the workflow manually on main. "force" rebuilds and releases both
 #   sources even if they were released before.
-# - Updating Python dependencies: change pyproject.toml, run "uv lock" and commit uv.lock.
-#   Dependabot does this for new versions.
+# - Updating Python dependencies: Dependabot updates uv.lock. After changing pyproject.toml
+#   (including requires-python), run "uv lock" and commit uv.lock.
+# - uv itself isn't pinned: setup-uv installs the latest release.
 # - Updating the SDK: change ASIO_REF below, and run the workflow with "force". If the new
 #   commit's origin differs, update SDK_ORIGINS in scripts/notices.py and the README.
 # - If releases stop: GitHub disables schedules after 60 days without repository activity.
@@ -53,8 +54,7 @@ env:
   ASIO_REF: 496a0765b8bb9c26f764f22f9a9712a937177db2 # ASIO SDK 2.3.4
   # All scripts run with this Python, except the smoke tests, which need the DLL's
   # architecture. The dependencies are locked in uv.lock.
-  PYTHON_VERSION: "3.13"
-  UV_VERSION: "0.13.9"
+  PYTHON_VERSION: "3.15"
   PYTHONUNBUFFERED: "1"
   PYTHONUTF8: "1"
 
@@ -78,7 +78,6 @@ jobs:
       - name: Set up uv and Python
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
 
@@ -130,7 +129,6 @@ jobs:
       - name: Set up uv and Python
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
 
@@ -184,7 +182,6 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: ${{ env.UV_VERSION }}
           enable-cache: true
 
       - name: Download build
@@ -200,7 +197,7 @@ jobs:
         env:
           SHA: ${{ matrix.source.sha }}
           VARIANT: ${{ matrix.variant }}
-          # uv's names for the architectures, e.g. cpython-3.13-windows-x86-none
+          # uv's names for the architectures, e.g. cpython-3.15-windows-x86-none
           PYTHON: cpython-${{ env.PYTHON_VERSION }}-windows-${{ fromJSON('{"x86":"x86","x64":"x86_64","arm64":"aarch64"}')[matrix.arch] }}-none
         run: |
           uv run --no-project --python "$PYTHON" builder/scripts/smoke_test.py out/*.dll \
@@ -221,7 +218,6 @@ jobs:
       - name: Set up uv and Python
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: ${{ env.UV_VERSION }}
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
 
