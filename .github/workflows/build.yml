@@ -1,0 +1,281 @@
+# SPDX-License-Identifier: MIT
+#
+# resolve -> build -> smoke -> package -> release
+#
+# Fetches PortAudio (latest release and master) and a pinned commit of the ASIO SDK, builds
+# each DLL with CMake and MSVC (Release, static runtime), checks it statically, then loads
+# and initializes it on a runner of its architecture. The tests need no audio hardware.
+#
+# On main (daily or started manually): build what hasn't been released yet, and release it.
+# On other branches (on push): build and test everything, but don't release. The would-be
+# release is uploaded as the "release" artifact of the run.
+#
+# - Testing a change: push to a branch other than main.
+# - Releasing now: run the workflow manually on main. "force" rebuilds and releases both
+#   sources even if they were released before.
+# - Updating Python dependencies: Dependabot updates uv.lock. After changing pyproject.toml
+#   (including requires-python), run "uv lock" and commit uv.lock.
+# - uv itself isn't pinned: setup-uv installs the latest release.
+# - Updating the SDK: change ASIO_REF below, and run the workflow with "force". If the new
+#   commit's origin differs, update SDK_ORIGINS in scripts/notices.py and the README.
+# - If releases stop: GitHub disables schedules after 60 days without repository activity.
+#   Re-enable the workflow on the Actions tab.
+#
+# Code from PortAudio and the SDK only runs in jobs with a read-only token. The release
+# job, which can write, runs none of it and doesn't check out any code.
+
+name: Build
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Build and release both sources, even if already released
+        type: boolean
+        default: false
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ASIO_REPO: zEdS15B3GCwq/asio
+  ASIO_REF: 496a0765b8bb9c26f764f22f9a9712a937177db2 # ASIO SDK 2.3.4
+  # All scripts run with this Python, except the smoke tests, which need the DLL's
+  # architecture. The dependencies are locked in uv.lock.
+  PYTHON_VERSION: "3.15"
+  PYTHONUNBUFFERED: "1"
+  PYTHONUTF8: "1"
+
+jobs:
+  resolve:
+    name: Find new sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sources: ${{ steps.resolve.outputs.sources }}
+      any: ${{ steps.resolve.outputs.any }}
+      publish: ${{ steps.resolve.outputs.publish }}
+      latest: ${{ steps.resolve.outputs.latest }}
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - name: Check out build scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          # python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Compare PortAudio with our releases
+        id: resolve
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FORCE: ${{ inputs.force }}
+        run: uv run --locked scripts/resolve.py
+
+  build:
+    name: Build ${{ matrix.source.label }} ${{ matrix.arch }} ${{ matrix.variant }}
+    needs: resolve
+    if: needs.resolve.outputs.any == 'true'
+    runs-on: windows-2025-vs2026 # also cross-compiles for x86 and ARM64
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        source: ${{ fromJSON(needs.resolve.outputs.sources) }}
+        arch: [x86, x64, arm64]
+        variant: [asio, no-asio]
+    steps:
+      - name: Check out build scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: builder
+          persist-credentials: false
+
+      - name: Check out PortAudio
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: PortAudio/portaudio
+          ref: ${{ matrix.source.sha }}
+          path: portaudio
+          persist-credentials: false
+
+      # Must be next to portaudio/ and named asiosdk: that's where both versions look.
+      # Builds without ASIO never have the SDK on disk.
+      - name: Check out ASIO SDK
+        if: matrix.variant == 'asio'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.ASIO_REPO }}
+          ref: ${{ env.ASIO_REF }}
+          path: asiosdk
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          # python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Build
+        env:
+          LABEL: ${{ matrix.source.label }}
+          SHA: ${{ matrix.source.sha }}
+          ARCH: ${{ matrix.arch }}
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          uv run --locked --project builder builder/scripts/build.py --source portaudio \
+            --label "$LABEL" --sha "$SHA" --arch "$ARCH" --variant "$VARIANT"
+
+      - name: Check DLL
+        env:
+          SHA: ${{ matrix.source.sha }}
+          ARCH: ${{ matrix.arch }}
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          uv run --locked --project builder builder/scripts/inspect_dll.py out/*.dll \
+            --arch "$ARCH" --variant "$VARIANT" --sha "$SHA"
+
+      - name: Upload build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: build-${{ matrix.source.label }}-${{ matrix.arch }}-${{ matrix.variant }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 14
+          overwrite: true
+
+  smoke:
+    name: Test ${{ matrix.source.label }} ${{ matrix.arch }} ${{ matrix.variant }}
+    needs: [resolve, build]
+    # ARM64 DLLs can only be loaded on ARM64.
+    runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-arm' || 'windows-2025-vs2026' }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        source: ${{ fromJSON(needs.resolve.outputs.sources) }}
+        arch: [x86, x64, arm64]
+        variant: [asio, no-asio]
+    steps:
+      - name: Check out build scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: builder
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+
+      - name: Download build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: build-${{ matrix.source.label }}-${{ matrix.arch }}-${{ matrix.variant }}
+          path: out
+
+      # The DLL is loaded into the Python process, so Python must have its architecture:
+      # 32-bit for x86 (runs on x64 Windows), x64, and ARM64 (not x64 under emulation).
+      # The smoke test only needs the standard library, hence --no-project.
+      - name: Load and initialize (no audio hardware needed)
+        env:
+          SHA: ${{ matrix.source.sha }}
+          VARIANT: ${{ matrix.variant }}
+          # uv's names for the architectures, e.g. cpython-3.15-windows-x86-none
+          PYTHON: cpython-${{ env.PYTHON_VERSION }}-windows-${{ fromJSON('{"x86":"x86","x64":"x86_64","arm64":"aarch64"}')[matrix.arch] }}-none
+        run: |
+          uv run --no-project --python "$PYTHON" builder/scripts/smoke_test.py out/*.dll \
+            --variant "$VARIANT" --sha "$SHA"
+
+  package:
+    name: Assemble release
+    needs: [resolve, build, smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out build scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: builder
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          # python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+
+      - name: Download builds
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: build-*
+          path: artifacts
+
+      - name: Assemble binaries, licenses, source list and checksums
+        env:
+          SOURCES: ${{ needs.resolve.outputs.sources }}
+        run: |
+          uv run --locked --project builder builder/scripts/package_release.py \
+            --artifacts artifacts --out release
+
+      - name: Upload release contents
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: release/
+          if-no-files-found: error
+          retention-days: 14
+          overwrite: true
+
+  release:
+    name: Publish release
+    needs: [resolve, package]
+    if: needs.resolve.outputs.publish == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Download release contents
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: release
+
+      - name: Attest build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: release/assets/*
+
+      # gh uploads to a draft and publishes only when all assets are in place.
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+          LATEST: ${{ needs.resolve.outputs.latest }}
+        run: |
+          gh release create "$TAG" release/assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "PortAudio Windows builds $TAG" \
+            --notes-file release/RELEASE_NOTES.md \
+            --latest="$LATEST"

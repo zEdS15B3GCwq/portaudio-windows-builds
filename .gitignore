@@ -1,0 +1,11 @@
+__pycache__/
+.venv/
+.tmp/
+
+# Created by the scripts when run from the repository root
+/artifacts/
+/asiosdk/
+/build/
+/out/
+/portaudio/
+/release/
