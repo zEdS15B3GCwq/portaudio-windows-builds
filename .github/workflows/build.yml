@@ -7,17 +7,20 @@
 # and initializes it on a runner of its architecture. The tests need no audio hardware.
 #
 # On main (daily or started manually): build what hasn't been released yet, and release it.
-# On other branches (on push): build and test everything, but don't release. The would-be
-# release is uploaded as the "release" artifact of the run.
+# On pull requests (opened or updated): build and test everything (forced), but don't
+# release. The would-be release is uploaded as the "release" artifact of the run.
 #
-# - Testing a change: push to a branch other than main.
-# - Releasing now: run the workflow manually on main. "force" rebuilds and releases both
-#   sources even if they were released before.
-# - Updating Python dependencies: Dependabot updates uv.lock. After changing pyproject.toml
-#   (including requires-python), run "uv lock" and commit uv.lock.
+# - Testing a change: open or push to a pull request, or run build action manually.
+# - Testing or Releasing manually: run the workflow manually on main. "force" rebuilds both
+#   sources even if they were released before; release only if "publish" is ticked.
+# - Updating Python dependencies: Dependabot updates uv.lock and the pins in pyproject.toml
+#   as needed.
+# - After manual changes to pyproject.toml (including requires-python), run "uv lock" and
+#   commit uv.lock.
 # - uv itself isn't pinned: setup-uv installs the latest release.
-# - Updating the SDK: change ASIO_REF below, and run the workflow with "force". If the new
-#   commit's origin differs, update SDK_ORIGINS in scripts/notices.py and the README.
+# - Updating the SDK: change ASIO_REF below, and run the workflow with "force" and "publish".
+#   If the new commit's origin differs, update SDK_ORIGINS in scripts/notices.py and the
+#   README.
 # - If releases stop: GitHub disables schedules after 60 days without repository activity.
 #   Re-enable the workflow on the Actions tab.
 #
@@ -35,15 +38,22 @@ on:
         description: Build and release both sources, even if already released
         type: boolean
         default: false
-  push:
-    branches-ignore: [main]
+      publish:
+        description: Publish a new release
+        type: boolean
+        default: false
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+  # push:
+  #   branches-ignore: [main]
 
 permissions:
   contents: read
 
 concurrency:
   group: build-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 defaults:
   run:
@@ -85,7 +95,7 @@ jobs:
         id: resolve
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          FORCE: ${{ inputs.force }}
+          FORCE: ${{ inputs.force || github.event_name == 'pull_request' }}
         run: uv run --locked scripts/resolve.py
 
   build:
@@ -246,7 +256,10 @@ jobs:
   release:
     name: Publish release
     needs: [resolve, package]
-    if: needs.resolve.outputs.publish == 'true' && github.ref == 'refs/heads/main'
+    if: >-
+      needs.resolve.outputs.publish == 'true'
+      && github.ref == 'refs/heads/main'
+      && (github.event_name != 'workflow_dispatch' || inputs.publish)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

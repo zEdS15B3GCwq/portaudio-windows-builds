@@ -7,8 +7,15 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+    commit-message:
+      prefix: "[dependabot]"
 
   - package-ecosystem: uv
     directory: /
     schedule:
       interval: weekly
+    groups:
+      deps:
+        patterns: ["*"]
+    commit-message:
+      prefix: "[dependabot]"
