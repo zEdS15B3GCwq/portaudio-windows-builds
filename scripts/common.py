@@ -25,6 +25,6 @@ def build_artifact_name(label: str, arch: str, variant: str) -> str:
     return f"build-{label}-{arch}-{variant}"
 
 
-def dev_zip_name(label: str) -> str:
-    # resolve.py also uses this asset as the "already released" marker for a source.
-    return f"portaudio-{label}-win-dev.zip"
+def marker_name(label: str) -> str:
+    """The asset that resolve.py takes as proof that a source has been released."""
+    return dll_name(label, "x64", "no-asio")

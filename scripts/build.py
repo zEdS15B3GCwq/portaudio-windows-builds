@@ -9,7 +9,6 @@ Expected layout, which both v19.7.0 and master find without any path options:
 Output:
 
     <out>/portaudio-<label>-win-<arch>[-asio].dll
-    <out>/dev/portaudio.lib   import library, which refers to portaudio.dll
     <out>/build-info.json
 """
 
@@ -73,9 +72,10 @@ def configure_command(source: Path, build: Path, arch: str, with_asio: bool) -> 
         "-DPA_USE_WASAPI=ON",
         "-DPA_USE_WDMKS=ON",
         "-DPA_DLL_LINK_WITH_STATIC_RUNTIME=ON",
-        # Both make v19.7.0 use the name portaudio on all architectures, as master does.
-        # Its default adds _x86 or _x64 (also for ARM64), and it insists on that suffix
-        # if it builds the static library too. Master has neither option and ignores them.
+        # Both make v19.7.0 name the DLL portaudio on all architectures, as master does, so
+        # that the name recorded inside the DLL is the same everywhere. Its default adds _x86
+        # or _x64 (also for ARM64), and it insists on that suffix if it builds the static
+        # library too. Master has neither option and ignores them.
         "-DPA_BUILD_STATIC=OFF",
         "-DPA_LIBNAME_ADD_SUFFIX=OFF",
     ]
@@ -125,12 +125,9 @@ def main() -> None:
     dll = only_match(release, "portaudio*.dll")
     if dll.name != "portaudio.dll":
         sys.exit(f"CMake named the DLL {dll.name}, expected portaudio.dll")
-    lib = only_match(release, "portaudio.lib")
 
-    (out / "dev").mkdir(parents=True)
+    out.mkdir(parents=True)
     shutil.copy2(dll, out / dll_name(args.label, args.arch, args.variant))
-    # Not renamed like the DLL: programs linked with it look for portaudio.dll anyway.
-    shutil.copy2(lib, out / "dev" / lib.name)
 
     cmake_version = run(["cmake", "--version"], env).splitlines()[0].split()[-1]
     info = {

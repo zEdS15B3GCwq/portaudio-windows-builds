@@ -1,19 +1,22 @@
 # SPDX-License-Identifier: MIT
 """The notices that the licenses require with the binaries, and the release notes."""
 
-from common import ARCHES, VARIANTS, dev_zip_name, dll_name, short_sha
+from common import ARCHES, VARIANTS, dll_name, short_sha
 
 TRADEMARK = "ASIO is a trademark and software of Steinberg Media Technologies GmbH."
 
-ASIO_ISSUE = "https://github.com/PortAudio/portaudio/issues/696"
+ASIO_ISSUES = (
+    "[PortAudio #696](https://github.com/PortAudio/portaudio/issues/696) and "
+    "[python-sounddevice #496](https://github.com/spatialaudio/python-sounddevice/issues/496)"
+)
 
 # About the fork's origin, so it stays true when the pinned commit changes.
 SDK_ORIGINS = (
     "  - [audiosdk/asio](https://github.com/audiosdk/asio), which it was forked from",
-    "  - [Steinberg's SDK zip](https://www.steinberg.net/asiosdk)",
+    "  - the ASIO SDK [obtainable from Steinberg's website](https://www.steinberg.net/asiosdk)",
     "  - When the fork was created (2026-11-21, at commit 496a076), it was identical to",
-    "    audiosdk/asio, and differed from the zip only in line endings. Both may have",
-    "    changed since.",
+    "    audiosdk/asio, and differed from Steinberg's download only in line endings. Both",
+    "    may have changed since.",
 )
 
 
@@ -116,23 +119,22 @@ def release_notes(
         for arch in ARCHES:
             names = " | ".join(f"`{dll_name(label, arch, variant)}`" for variant in VARIANTS)
             lines.append(f"| {arch} | {names} |")
-        lines += ["", f"Headers and import libraries: `{dev_zip_name(label)}`", ""]
+        lines.append("")
 
     readme = f"https://github.com/{repo}/blob/{builder_sha}/README.md"
     lines += [
         "All DLLs support MME, DirectSound, WASAPI and WDM-KS.",
         "",
-        "**Use the `-asio` DLLs only if you need ASIO.** Initializing PortAudio then loads all",
-        "installed ASIO drivers, which is third-party code. This can be slow, interrupt other",
-        "audio, crash the application and be a security risk, see",
-        f"[PortAudio #696]({ASIO_ISSUE}).",
+        "The `-asio` DLLs load every installed ASIO driver when PortAudio initializes, which",
+        f"can cause slow startup, disrupted audio and other problems. See {ASIO_ISSUES}.",
         "",
         "### Licenses",
         "",
         "- `-asio` DLLs: **GPLv3**, as they contain code of the Steinberg ASIO SDK",
-        "- Other DLLs: PortAudio's MIT license",
+        "- Other DLLs: PortAudio's license",
         "",
-        "The license texts are attached to this release.",
+        "The license texts are attached to this release. Users are responsible for complying",
+        "with the terms of these licenses.",
         f"See the [README]({readme}#licenses) for details.",
         "",
         "### Sources",

@@ -14,22 +14,11 @@ import os
 import subprocess
 import sys
 import tempfile
-import zipfile
 from pathlib import Path
 
-from common import ARCHES, VARIANTS, build_artifact_name, dev_zip_name, dll_name, file_suffix
+from common import ARCHES, VARIANTS, build_artifact_name, dll_name
 from inspect_dll import check
 from notices import asio_license, notice, release_notes
-
-PUBLIC_HEADERS = (
-    "portaudio.h",
-    "pa_asio.h",
-    "pa_win_ds.h",
-    "pa_win_waveformat.h",
-    "pa_win_wasapi.h",
-    "pa_win_wdmks.h",
-    "pa_win_wmme.h",
-)
 
 # GPLv3 has to be passed on with the binaries. Ubuntu, which this runs on, ships the text.
 GPL_TEXT = Path("/usr/share/common-licenses/GPL-3")
@@ -69,19 +58,10 @@ def read_gpl(path: Path) -> bytes:
     return text
 
 
-def write_zip(path: Path, files: dict[str, bytes]) -> None:
-    with zipfile.ZipFile(path, "w") as archive:
-        for name, data in sorted(files.items()):
-            # A fixed timestamp keeps the zip independent of when it was built.
-            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
-            info.compress_type = zipfile.ZIP_DEFLATED
-            archive.writestr(info, data)
-
-
-def collect_builds(source: dict, artifacts: Path, assets: Path) -> tuple[list[dict], dict]:
-    """Check and copy all DLLs of a source. Return build details and import libraries."""
+def collect_builds(source: dict, artifacts: Path, assets: Path) -> list[dict]:
+    """Check and copy all DLLs of a source. Return their build details."""
     label, sha = source["label"], source["sha"]
-    builds, libraries = [], {}
+    builds = []
     for arch in ARCHES:
         for variant in VARIANTS:
             directory = artifacts / build_artifact_name(label, arch, variant)
@@ -91,13 +71,8 @@ def collect_builds(source: dict, artifacts: Path, assets: Path) -> tuple[list[di
                 sys.exit(f"{name}: {'; '.join(problems)}")
             (assets / name).write_bytes((directory / name).read_bytes())
 
-            dev = sorted((directory / "dev").iterdir())
-            if [file.name for file in dev] != ["portaudio.lib"]:
-                sys.exit(f"expected only portaudio.lib in {directory / 'dev'}")
-            libraries[f"{arch}{file_suffix(variant)}/{dev[0].name}"] = dev[0].read_bytes()
-
             builds.append(json.loads((directory / "build-info.json").read_text(encoding="utf-8")))
-    return builds, libraries
+    return builds
 
 
 def write_checksums(assets: Path) -> None:
@@ -141,11 +116,7 @@ def main() -> None:
 
         all_builds = []
         for source in sources:
-            label, repo = source["label"], portaudio[source["label"]]
-            builds, libraries = collect_builds(source, args.artifacts, assets)
-            all_builds += builds
-            headers = {f"include/{h}": repo.read(f"include/{h}") for h in PUBLIC_HEADERS}
-            write_zip(assets / dev_zip_name(label), {**libraries, **headers})
+            all_builds += collect_builds(source, args.artifacts, assets)
 
     date = dt.datetime.now(dt.timezone.utc).date().isoformat()
     text = notice(sources, all_builds, sdk_repo, sdk_sha, repo_name, builder_sha, date)

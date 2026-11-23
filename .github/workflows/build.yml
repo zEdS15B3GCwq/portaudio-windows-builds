@@ -2,9 +2,21 @@
 #
 # resolve -> build -> smoke -> package -> release
 #
+# Fetches PortAudio (latest release and master) and a pinned commit of the ASIO SDK, builds
+# each DLL with CMake and MSVC (Release, static runtime), checks it statically, then loads
+# and initializes it on a runner of its architecture. The tests need no audio hardware.
+#
 # On main (daily or started manually): build what hasn't been released yet, and release it.
 # On other branches (on push): build and test everything, but don't release. The would-be
 # release is uploaded as the "release" artifact of the run.
+#
+# - Testing a change: push to a branch other than main.
+# - Releasing now: run the workflow manually on main. "force" rebuilds and releases both
+#   sources even if they were released before.
+# - Updating the SDK: change ASIO_REF below, and run the workflow with "force". If the new
+#   commit's origin differs, update SDK_ORIGINS in scripts/notices.py and the README.
+# - If releases stop: GitHub disables schedules after 60 days without repository activity.
+#   Re-enable the workflow on the Actions tab.
 #
 # Code from PortAudio and the SDK only runs in jobs with a read-only token. The release
 # job, which can write, runs none of it and doesn't check out any code.

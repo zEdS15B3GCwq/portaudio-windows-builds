@@ -6,12 +6,12 @@ with and without ASIO support.
 This is an unofficial project, not affiliated with or endorsed by the PortAudio project or
 Steinberg Media Technologies GmbH.
 
-All files are built with GitHub Actions from public sources at recorded commits, and you
-can [verify that](#verifying-a-download).
+All files are built with GitHub Actions from public sources at recorded commits, which
+can be [verified](#verifying-a-download).
 
 ## Downloads
 
-The DLLs are on the [Releases](../../releases) page, as individual files:
+The DLLs are available on the [Releases](../../releases) page, as individual files:
 
 | File | Host APIs |
 |---|---|
@@ -20,109 +20,70 @@ The DLLs are on the [Releases](../../releases) page, as individual files:
 
 - `<version>` is a PortAudio release (e.g. `v19.7.0`) or a state of its master branch, by
   commit date and hash (e.g. `master-20261120-e813847`).
-- `<arch>` is `x64`, `x86` or `arm64`. It must match the application that loads the DLL.
+- `<arch>` is `x64`, `x86` or `arm64`, and has to match the application that loads the DLL.
 
-The DLLs don't need the Visual C++ redistributable.
+The DLLs don't require the Visual C++ redistributable.
 
-If you load the DLL at runtime (`LoadLibrary`, `ctypes` etc.), you can use it under any
-name. To link at compile time instead:
+## ASIO
 
-1. Get `portaudio-<version>-win-dev.zip`, which has the headers and a folder for each
-   architecture and variant, e.g. `arm64-asio/portaudio.lib`.
-2. Link with the `portaudio.lib` that matches your DLL.
-3. **Ship the DLL renamed to `portaudio.dll`.** Programs linked with any of these libraries
-   look for that name, and don't start without it.
-
-## Before you use a DLL with ASIO
-
-**Use an `-asio` DLL only if you need ASIO.** When PortAudio initializes, it loads and
-queries *every* installed ASIO driver, even if your application never uses ASIO. These
-drivers are third-party code of varying quality, which has consequences:
-
-- **Security risk**: the drivers' code runs inside your process, with its privileges.
-- **Slow initialization**: each driver adds to the startup time, some of them seconds.
-- **Disrupted audio**: some drivers seize the device when loaded, which can interrupt the
-  audio of other applications.
-- **Crashes**: a faulty driver can take down your application.
-
-[python-sounddevice issue #496](https://github.com/spatialaudio/python-sounddevice/issues/496)
-describes the problems this caused in practice: with ASIO included in the bundled DLL,
-merely importing the package interrupted other audio and delayed startup, so ASIO is no
-longer enabled there by default. The underlying cause is discussed in
-[PortAudio issue #696](https://github.com/PortAudio/portaudio/issues/696).
-
-The DLLs without `-asio` don't have these problems, as they contain no ASIO code.
+The `-asio` DLLs load every installed ASIO driver when PortAudio initializes, even if ASIO
+is never used. This can cause slow startup, disrupted audio and other problems, as
+described in [PortAudio #696](https://github.com/PortAudio/portaudio/issues/696) and
+[python-sounddevice #496](https://github.com/spatialaudio/python-sounddevice/issues/496).
+The DLLs without `-asio` contain no ASIO code.
 
 ## Licenses
 
 | What | License |
 |---|---|
 | The code in this repository (scripts, workflow) | [MIT](LICENSE) |
-| DLLs without ASIO | PortAudio's [MIT license](https://github.com/PortAudio/portaudio/blob/master/LICENSE.txt) |
+| DLLs without ASIO | [PortAudio's license](https://github.com/PortAudio/portaudio/blob/master/LICENSE.txt) |
 | `-asio` DLLs | [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html) |
 
-**PortAudio** is by Ross Bencina, Phil Burk and contributors, under the MIT license. See
-[portaudio.com](https://www.portaudio.com/license.html) and its
-[repository](https://github.com/PortAudio/portaudio).
+**PortAudio** is developed by Ross Bencina, Phil Burk and contributors. See
+[portaudio.com](https://www.portaudio.com/license.html) and the
+[PortAudio repository](https://github.com/PortAudio/portaudio).
 
-**Steinberg Audio Stream I/O API (ASIO)** is by Steinberg Media Technologies GmbH, who
-offer the SDK under either a proprietary license or GPLv3. The DLLs here use the GPLv3
-option. See the [SDK repository](https://github.com/audiosdk/asio) and
+The **ASIO SDK** is by Steinberg Media Technologies GmbH. The `-asio` DLLs use it under
+its GPLv3 option. See the [SDK repository](https://github.com/audiosdk/asio) and
 [Steinberg's developer site](https://www.steinberg.net/en/company/developers.html).
 
 ASIO is a trademark and software of Steinberg Media Technologies GmbH.
 
-**Your responsibilities**: if you redistribute a DLL, you have to comply with its license.
-For the `-asio` DLLs that is GPLv3, which can also affect the licensing of software that
-you distribute with them. If GPLv3 doesn't suit you, use a DLL without ASIO, or obtain a
-license from Steinberg and build your own. Refer to the documentation linked above.
+Users of these files are responsible for complying with the terms of the respective
+licenses.
 
-Each release includes the license texts, and `NOTICE.md` links to the exact source code
-of PortAudio, the ASIO SDK and the build scripts. The "Source code" archives that GitHub
-adds to each release contain only this repository's code.
+Each release includes the license texts, and its `NOTICE.md` links to the exact source
+code of PortAudio, the ASIO SDK and the build scripts. The "Source code" archives that
+GitHub adds to each release contain only this repository's code.
 
-The ASIO SDK source is taken from [our fork](https://github.com/zEdS15B3GCwq/asio) of
+The ASIO SDK source is taken from [a fork](https://github.com/zEdS15B3GCwq/asio) of
 [audiosdk/asio](https://github.com/audiosdk/asio). When the fork was created (2026-11-21),
-it was identical to that repository, and differed from the
-[zip on Steinberg's site](https://www.steinberg.net/asiosdk) only in line endings.
+it was identical to that repository, and differed from the ASIO SDK
+[obtainable from Steinberg's website](https://www.steinberg.net/asiosdk) only in line
+endings.
 
 ## Releases
 
 A daily check looks for a new PortAudio release and for new commits on master, and
 releases only what is new: a release build, a master build, or both. The release marked
-"Latest" is the newest with a PortAudio release build, so look through the list for newer
-master builds. `NOTICE.md` in each release records the commits and toolchain.
+"Latest" is the newest one with a PortAudio release build, so newer master builds may be
+listed above it. `NOTICE.md` in each release records the commits and toolchain.
 
-`Pa_GetVersionText()` says `V19.7.0-devel` for both kinds of build, as that's what the
-PortAudio sources contain. The revision after it identifies the commit.
+`Pa_GetVersionText()` returns `V19.7.0-devel` for both kinds of build. The revision after
+it identifies the commit.
 
 ## Verifying a download
 
 Each file has a signed
 [attestation](https://docs.github.com/en/actions/concepts/security/artifact-attestations)
-that links it to the workflow run and commit that produced it. To check it with the
+that links it to the workflow run and commit that produced it. It can be checked with the
 [GitHub CLI](https://cli.github.com/):
 
 ```
 gh attestation verify <file> --repo zEdS15B3GCwq/portaudio-windows-builds
 ```
 
-Alternatively, compare `Get-FileHash <file>` with `SHA256SUMS` from the release. Either
-way, this shows where a file came from, and isn't an audit of the code in it.
-
-## How it's built
-
-[`build.yml`](.github/workflows/build.yml) fetches
-[PortAudio](https://github.com/PortAudio/portaudio) and a pinned commit of the ASIO SDK
-([fork](https://github.com/zEdS15B3GCwq/asio) of
-[audiosdk/asio](https://github.com/audiosdk/asio)), builds with CMake and MSVC in Release
-mode with a static runtime, then checks and test-loads each DLL. The tests don't need
-audio hardware.
-
-- **Testing a change**: push to a branch other than `main`. The would-be release is
-  uploaded as the run's `release` artifact, and nothing is published.
-- **Releasing now**: run the workflow manually on `main`. `force` rebuilds and releases
-  both sources even if they were released before.
-- **Updating the SDK**: change `ASIO_REF` in the workflow and run it with `force`.
-- **If releases stop**: GitHub disables schedules after 60 days without repository
-  activity. Re-enable the workflow on the Actions tab.
+Alternatively, the output of `Get-FileHash <file>` can be compared with `SHA256SUMS` from
+the release. Either way, this shows where a file came from, and is not an audit of the code
+in it.

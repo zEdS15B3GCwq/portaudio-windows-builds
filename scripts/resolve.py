@@ -15,7 +15,7 @@ import re
 import urllib.parse
 import urllib.request
 
-from common import dev_zip_name, short_sha
+from common import marker_name, short_sha
 
 API = "https://api.github.com"
 UPSTREAM = "PortAudio/portaudio"
@@ -82,7 +82,7 @@ def select_new(candidates: list[dict], releases: list[dict]) -> list[dict]:
         if not release["draft"]
         for asset in release["assets"]
     }
-    return [c for c in candidates if dev_zip_name(c["label"]) not in published]
+    return [c for c in candidates if marker_name(c["label"]) not in published]
 
 
 def next_tag(today: str, existing: set[str]) -> str:
