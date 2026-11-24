@@ -43,9 +43,12 @@ on:
         description: Publish a new release
         type: boolean
         default: false
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: [main]
+  # Pull requests: called by precommit.yml once the hooks pass.
+  workflow_call:
+    inputs:
+      force:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -94,7 +97,7 @@ jobs:
         id: resolve
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          FORCE: ${{ inputs.force || github.event_name == 'pull_request' }}
+          FORCE: ${{ inputs.force }}
         run: uv run --locked scripts/resolve.py
 
   build:

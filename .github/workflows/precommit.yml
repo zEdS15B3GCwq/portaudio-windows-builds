@@ -168,3 +168,17 @@ jobs:
           git apply --index "$RUNNER_TEMP/fixes.patch"
           git commit -m "[pre-commit] automatic fixes"
           git push origin "HEAD:refs/heads/${HEAD_REF}"
+
+  build:
+    name: Build
+    needs: precommit
+    uses: $/.github/workflows/build.yml
+    with:
+      force: true
+    # A ceiling for build.yml's jobs, not a grant. Only its release job asks for these,
+    # and it never runs in a pull request (it requires refs/heads/main).
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
