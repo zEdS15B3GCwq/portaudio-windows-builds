@@ -58,9 +58,7 @@ def check(pa, variant: str, sha: str) -> tuple[list[str], list[str]]:
         problems.append("Pa_GetSampleSize(paFloat32) didn't return 4")
 
     if error := pa.Pa_Initialize():
-        message = (
-            f"Pa_Initialize returned {error} ({pa.Pa_GetErrorText(error).decode()})"
-        )
+        message = f"Pa_Initialize returned {error} ({pa.Pa_GetErrorText(error).decode()})"
         if error == PA_INTERNAL_ERROR:
             warnings.append(f"{message}, so host API registration wasn't tested")
         else:
@@ -85,9 +83,7 @@ def check(pa, variant: str, sha: str) -> tuple[list[str], list[str]]:
     if unexpected := found - required - optional:
         problems.append(f"unexpected host APIs: {', '.join(sorted(unexpected))}")
     if unavailable := optional - found:
-        warnings.append(
-            f"not available on this machine: {', '.join(sorted(unavailable))}"
-        )
+        warnings.append(f"not available on this machine: {', '.join(sorted(unavailable))}")
     return problems, warnings
 
 
@@ -100,9 +96,7 @@ def main() -> None:
 
     # Flush, so that the log names the DLL even if loading it crashes the process.
     print(f"== {args.dll.name}", flush=True)
-    print(
-        f"   python : {sys.version.split()[0]} {sysconfig.get_platform()}", flush=True
-    )
+    print(f"   python : {sys.version.split()[0]} {sysconfig.get_platform()}", flush=True)
     problems, warnings = check(load(args.dll), args.variant, args.sha)
     for warning in warnings:
         print(f"::warning::{args.dll.name}: {warning}")

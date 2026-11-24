@@ -33,9 +33,7 @@ def asio_license(sdk) -> str:
         header.append(line.rstrip())
     embedded = "\n".join(header).strip()
     if "Redistribution and use" not in embedded:
-        raise ValueError(
-            "the license in the SDK's host/ sources has changed, review it"
-        )
+        raise ValueError("the license in the SDK's host/ sources has changed, review it")
 
     return (
         f"{sdk.text('LICENSE.txt').rstrip()}\n\n"
@@ -53,10 +51,7 @@ def source_list(
         return f"[{name}@{short_sha(sha)}](https://github.com/{name}/tree/{sha})"
 
     return [
-        *(
-            f"- PortAudio {s['label']}: {link('PortAudio/portaudio', s['sha'])}"
-            for s in sources
-        ),
+        *(f"- PortAudio {s['label']}: {link('PortAudio/portaudio', s['sha'])}" for s in sources),
         f"- ASIO SDK (only in `-asio` DLLs): {link(sdk_repo, sdk_sha)}",
         *SDK_ORIGINS,
         f"- Build scripts: {link(repo, builder_sha)}, also attached to the release as",
@@ -122,9 +117,7 @@ def release_notes(
             "|---|---|---|",
         ]
         for arch in ARCHES:
-            names = " | ".join(
-                f"`{dll_name(label, arch, variant)}`" for variant in VARIANTS
-            )
+            names = " | ".join(f"`{dll_name(label, arch, variant)}`" for variant in VARIANTS)
             lines.append(f"| {arch} | {names} |")
         lines.append("")
 

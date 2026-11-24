@@ -78,10 +78,7 @@ def find_candidates() -> list[dict]:
 
 def select_new(candidates: list[dict], releases: list[dict]) -> list[dict]:
     published = {
-        asset["name"]
-        for release in releases
-        if not release["draft"]
-        for asset in release["assets"]
+        asset["name"] for release in releases if not release["draft"] for asset in release["assets"]
     }
     return [c for c in candidates if marker_name(c["label"]) not in published]
 
@@ -118,7 +115,7 @@ def main() -> None:
         "latest": str(any(s["kind"] == "release" for s in sources)).lower(),
         "tag": tag,
     }
-    with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as file:
+    with open(os.environ["GITHUB_OUTPUT"], "a") as file:
         for key, value in outputs.items():
             file.write(f"{key}={value}\n")
             print(f"{key}={value}")
