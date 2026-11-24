@@ -61,9 +61,7 @@ def build_environment(sha: str) -> dict:
     }
 
 
-def configure_command(
-    source: Path, build: Path, arch: str, with_asio: bool
-) -> list[str]:
+def configure_command(source: Path, build: Path, arch: str, with_asio: bool) -> list[str]:
     return [
         "cmake",
         "-S",
@@ -90,9 +88,7 @@ def configure_command(
 def only_match(directory: Path, pattern: str) -> Path:
     matches = sorted(directory.glob(pattern))
     if len(matches) != 1:
-        sys.exit(
-            f"expected one {pattern} in {directory}, found {[m.name for m in matches]}"
-        )
+        sys.exit(f"expected one {pattern} in {directory}, found {[m.name for m in matches]}")
     return matches[0]
 
 
@@ -118,9 +114,7 @@ def main() -> None:
     if with_asio and not (sdk / "common" / "asio.h").is_file():
         sys.exit(f"the asio variant needs the ASIO SDK in {sdk}")
     if not with_asio and sdk.exists():
-        sys.exit(
-            f"the no-asio variant must be built without the ASIO SDK present, found {sdk}"
-        )
+        sys.exit(f"the no-asio variant must be built without the ASIO SDK present, found {sdk}")
     if build.exists() or out.exists():
         sys.exit("build and output directories must not exist yet")
 
@@ -160,9 +154,7 @@ def main() -> None:
         ).strip()
         or "local",
     }
-    (out / "build-info.json").write_text(
-        json.dumps(info, indent=2) + "\n", encoding="utf-8"
-    )
+    (out / "build-info.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

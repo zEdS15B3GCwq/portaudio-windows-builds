@@ -28,23 +28,15 @@ def check(path: Path, arch: str, variant: str, sha: str) -> list[str]:
     data = path.read_bytes()
     pe = pefile.PE(data=data)
     actual_arch = MACHINES.get(pe.FILE_HEADER.Machine, hex(pe.FILE_HEADER.Machine))
-    imports = sorted(
-        e.dll.decode().lower() for e in getattr(pe, "DIRECTORY_ENTRY_IMPORT", [])
-    )
+    imports = sorted(e.dll.decode().lower() for e in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []))
     export_table = getattr(pe, "DIRECTORY_ENTRY_EXPORT", None)
-    exports = (
-        {s.name.decode() for s in export_table.symbols if s.name}
-        if export_table
-        else set()
-    )
+    exports = {s.name.decode() for s in export_table.symbols if s.name} if export_table else set()
     asio_exports = sorted(e for e in exports if e.startswith("PaAsio_"))
 
     print(f"== {path.name}")
     print(f"   arch    : {actual_arch}")
     print(f"   imports : {', '.join(imports)}")
-    print(
-        f"   exports : {len(exports)}, of which ASIO: {', '.join(asio_exports) or '-'}"
-    )
+    print(f"   exports : {len(exports)}, of which ASIO: {', '.join(asio_exports) or '-'}")
 
     problems = []
     if actual_arch != arch:

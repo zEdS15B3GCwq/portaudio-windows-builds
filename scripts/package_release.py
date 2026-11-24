@@ -53,10 +53,7 @@ class Repo:
 
 def read_gpl(path: Path) -> bytes:
     text = path.read_bytes() if path.is_file() else b""
-    if (
-        b"GNU GENERAL PUBLIC LICENSE" not in text
-        or b"Version 3, 29 June 2007" not in text
-    ):
+    if b"GNU GENERAL PUBLIC LICENSE" not in text or b"Version 3, 29 June 2007" not in text:
         sys.exit(f"{path} doesn't contain the GPLv3 text, which the release needs")
     return text
 
@@ -74,9 +71,7 @@ def collect_builds(source: dict, artifacts: Path, assets: Path) -> list[dict]:
                 sys.exit(f"{name}: {'; '.join(problems)}")
             (assets / name).write_bytes((directory / name).read_bytes())
 
-            builds.append(
-                json.loads((directory / "build-info.json").read_text(encoding="utf-8"))
-            )
+            builds.append(json.loads((directory / "build-info.json").read_text(encoding="utf-8")))
     return builds
 
 
@@ -93,9 +88,7 @@ def main() -> None:
     parser.add_argument("--artifacts", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--gpl-text", type=Path, default=GPL_TEXT)
-    parser.add_argument(
-        "--portaudio-url", default="https://github.com/PortAudio/portaudio.git"
-    )
+    parser.add_argument("--portaudio-url", default="https://github.com/PortAudio/portaudio.git")
     args = parser.parse_args()
 
     sources = json.loads(os.environ["SOURCES"])
