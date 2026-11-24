@@ -1,3 +1,4 @@
+---
 # SPDX-License-Identifier: MIT
 #
 # resolve -> build -> smoke -> package -> release
@@ -45,8 +46,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [main]
-  # push:
-  #   branches-ignore: [main]
+    # push:
+    #   branches-ignore: [main]
 
 permissions:
   contents: read
@@ -61,7 +62,7 @@ defaults:
 
 env:
   ASIO_REPO: zEdS15B3GCwq/asio
-  ASIO_REF: 496a0765b8bb9c26f764f22f9a9712a937177db2 # ASIO SDK 2.3.4
+  ASIO_REF: 496a0765b8bb9c26f764f22f9a9712a937177db2  # ASIO SDK 2.3.4
   # All scripts run with this Python, except the smoke tests, which need the DLL's
   # architecture. The dependencies are locked in uv.lock.
   PYTHON_VERSION: "3.15"
@@ -81,12 +82,12 @@ jobs:
       tag: ${{ steps.resolve.outputs.tag }}
     steps:
       - name: Check out build scripts
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d  # v10.4.0
         with:
           # python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
@@ -102,7 +103,7 @@ jobs:
     name: Build ${{ matrix.source.label }} ${{ matrix.arch }} ${{ matrix.variant }}
     needs: resolve
     if: needs.resolve.outputs.any == 'true'
-    runs-on: windows-2025-vs2026 # also cross-compiles for x86 and ARM64
+    runs-on: windows-2025-vs2026  # also cross-compiles for x86 and ARM64
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -112,13 +113,13 @@ jobs:
         variant: [asio, no-asio]
     steps:
       - name: Check out build scripts
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           path: builder
           persist-credentials: false
 
       - name: Check out PortAudio
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: PortAudio/portaudio
           ref: ${{ matrix.source.sha }}
@@ -129,7 +130,7 @@ jobs:
       # Builds without ASIO never have the SDK on disk.
       - name: Check out ASIO SDK
         if: matrix.variant == 'asio'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: ${{ env.ASIO_REPO }}
           ref: ${{ env.ASIO_REF }}
@@ -137,7 +138,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d  # v10.4.0
         with:
           # python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
@@ -162,7 +163,7 @@ jobs:
             --arch "$ARCH" --variant "$VARIANT" --sha "$SHA"
 
       - name: Upload build
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: build-${{ matrix.source.label }}-${{ matrix.arch }}-${{ matrix.variant }}
           path: out/
@@ -173,8 +174,7 @@ jobs:
   smoke:
     name: Test ${{ matrix.source.label }} ${{ matrix.arch }} ${{ matrix.variant }}
     needs: [resolve, build]
-    # ARM64 DLLs can only be loaded on ARM64.
-    runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-arm' || 'windows-2025-vs2026' }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -182,20 +182,32 @@ jobs:
         source: ${{ fromJSON(needs.resolve.outputs.sources) }}
         arch: [x86, x64, arm64]
         variant: [asio, no-asio]
+        # uv's architecture names, e.g. cpython-3.15-windows-x86_64-none
+        include:
+          - arch: x86
+            python_arch: x86
+            runner: windows-2025-vs2026
+          - arch: x64
+            python_arch: x86_64
+            runner: windows-2025-vs2026
+          - arch: arm64
+            python_arch: aarch64
+            # ARM64 DLLs can only be loaded on ARM64.
+            runner: windows-11-arm
     steps:
       - name: Check out build scripts
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           path: builder
           persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d  # v10.4.0
         with:
           enable-cache: true
 
       - name: Download build
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: build-${{ matrix.source.label }}-${{ matrix.arch }}-${{ matrix.variant }}
           path: out
@@ -208,7 +220,7 @@ jobs:
           SHA: ${{ matrix.source.sha }}
           VARIANT: ${{ matrix.variant }}
           # uv's names for the architectures, e.g. cpython-3.15-windows-x86-none
-          PYTHON: cpython-${{ env.PYTHON_VERSION }}-windows-${{ fromJSON('{"x86":"x86","x64":"x86_64","arm64":"aarch64"}')[matrix.arch] }}-none
+          PYTHON: cpython-${{ env.PYTHON_VERSION }}-windows-${{ matrix.python_arch }}-none
         run: |
           uv run --no-project --python "$PYTHON" builder/scripts/smoke_test.py out/*.dll \
             --variant "$VARIANT" --sha "$SHA"
@@ -220,19 +232,19 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out build scripts
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           path: builder
           persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d  # v10.4.0
         with:
           # python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
 
       - name: Download builds
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           pattern: build-*
           path: artifacts
@@ -245,7 +257,7 @@ jobs:
             --artifacts artifacts --out release
 
       - name: Upload release contents
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: release
           path: release/
@@ -256,7 +268,7 @@ jobs:
   release:
     name: Publish release
     needs: [resolve, package]
-    if: >-
+    if: |-
       needs.resolve.outputs.publish == 'true'
       && github.ref == 'refs/heads/main'
       && (github.event_name != 'workflow_dispatch' || inputs.publish)
@@ -269,13 +281,13 @@ jobs:
       artifact-metadata: write
     steps:
       - name: Download release contents
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: release
           path: release
 
       - name: Attest build provenance
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6  # v4.2.2
         with:
           subject-path: release/assets/*
 

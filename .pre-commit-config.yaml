@@ -1,0 +1,121 @@
+---
+default_language_version:
+  python: python3.15
+
+repos:
+  # Meta hooks to check the pre-commit config itself
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+
+  # General purpose hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: check-ast
+      - id: debug-statements
+      - id: no-commit-to-branch
+      - id: check-docstring-first
+      - id: check-illegal-windows-names
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Validate pyproject.toml
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: 82d21874c3242e4dc27bb47641c996902ef64eef  # frozen: v0.27
+    hooks:
+      - id: validate-pyproject
+
+  # Python linting/formatting with Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 9026c9127e153371d7a78dfcb0c45ae2046a3d10  # frozen: v0.17.6
+    hooks:
+      # Linter (just check)
+      - id: ruff-check
+      # Formatter (fix)
+      - id: ruff-format
+
+  # Upgrade syntax to newer Python versions
+  - repo: https://github.com/asottile/pyupgrade
+    rev: f22ea0651f4355c655cc581f67813c991c74a312  # frozen: v3.22.0
+    hooks:
+      - id: pyupgrade
+        args: [--py315-plus]
+
+  # Check for common misspellings 1.
+  - repo: https://github.com/crate-ci/typos
+    rev: 276087d9a4f06398b3e04825487805e2d7375888  # frozen: v1.52.2
+    hooks:
+      - id: typos
+
+  # Check for common misspellings 2.
+  - repo: https://github.com/codespell-project/codespell
+    rev: 57b21406f092110c18776e39b0bda50d37c945c8  # frozen: v2.4.3
+    hooks:
+      - id: codespell
+
+  # Detect security vulnerabilities in GitHub Actions workflows
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: c7d31dc612dffdd4d3b2f2b88b9660d3ab057ee8  # frozen: v1.33.1
+    hooks:
+      - id: zizmor
+
+  # YAML linting
+  # configuration file: .yamllint
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: cba56bcde1fdd01c1deb3f945e69764c291a6530  # frozen: v1.38.0
+    hooks:
+      - id: yamllint
+        args: [--format, parsable, --strict]
+
+  # YAML formatting
+  # configuration file: .yamlfmt
+  - repo: https://github.com/google/yamlfmt
+    rev: 21ca5323a9c87ee37a434e0ca908efc0a89daa07  # frozen: v0.21.0
+    hooks:
+      - id: yamlfmt
+        max_line_length: 100
+
+  # Find dead Python code
+  - repo: https://github.com/jendrikseipp/vulture
+    rev: b0f67ba0044693aa9ec0d38fe460590facc98004  # frozen: v2.16
+    hooks:
+      - id: vulture
+        pass_filenames: false
+        args: ["--min-confidence", "60", "scripts/"]
+
+  # Reorder TOML contents
+  - repo: https://github.com/pappasam/toml-sort
+    rev: bb0722c5b9b3f8ca3a7398bb3dcb9b7c26163c16  # frozen: v0.26.0
+    hooks:
+      - id: toml-sort-fix
+        files: pyproject.toml
+
+  # Static checker for GitHub Action files
+  - repo: https://github.com/rhysd/actionlint
+    rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # frozen: v1.7.12
+    hooks:
+      - id: actionlint
+
+  # Ensure the lock file is up-to-date
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 00eaed0068329eb6ca6bcb8de7b46c372d8d1c19  # frozen: 0.13.9
+    hooks:
+      # Update the uv lockfile
+      - id: uv-lock
+
+  # Validate GitHub Workflow and dependabot files
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: a76b92851fc9eede9f9bc4073eb55202f34eb0df  # frozen: 0.39.0
+    hooks:
+      - id: check-github-workflows
+        args: ["--verbose"]
+      - id: check-dependabot
