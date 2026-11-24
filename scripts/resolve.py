@@ -118,7 +118,7 @@ def main() -> None:
         "latest": str(any(s["kind"] == "release" for s in sources)).lower(),
         "tag": tag,
     }
-    with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as file:
+    with open(os.environ["GITHUB_OUTPUT"], "a") as file:
         for key, value in outputs.items():
             file.write(f"{key}={value}\n")
             print(f"{key}={value}")
