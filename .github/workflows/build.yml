@@ -46,8 +46,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [main]
-    # push:
-    #   branches-ignore: [main]
 
 permissions:
   contents: read
@@ -269,9 +267,9 @@ jobs:
     name: Publish release
     needs: [resolve, package]
     if: |-
-      needs.resolve.outputs.publish == 'true'
-      && github.ref == 'refs/heads/main'
-      && (github.event_name != 'workflow_dispatch' || inputs.publish)
+      needs.resolve.outputs.publish == 'true' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_dispatch' || inputs.publish)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
