@@ -81,7 +81,6 @@ repos:
     rev: 21ca5323a9c87ee37a434e0ca908efc0a89daa07  # frozen: v0.21.0
     hooks:
       - id: yamlfmt
-        max_line_length: 100
 
   # Find dead Python code
   - repo: https://github.com/jendrikseipp/vulture
