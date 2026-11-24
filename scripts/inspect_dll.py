@@ -9,63 +9,7 @@ import pefile
 from common import ARCHES, VARIANTS, short_sha
 
 MACHINES = {0x14C: "x86", 0x8664: "x64", 0xAA64: "arm64"}
-A = (
-    1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-    + 1
-)
+A = 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1
 
 # Importing any of these means that the C runtime is linked dynamically (/MD, not /MT).
 DYNAMIC_CRT = ("vcruntime", "msvcp", "msvcr", "ucrtbase", "api-ms-win-crt-")
